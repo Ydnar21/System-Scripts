@@ -1,0 +1,94 @@
+---
+#Randy Dickersbach
+#9/8/2022
+#Emal: rdd5878@rit.edu
+#Requirements
+#Must have firewalld installed
+#sudo systemctl start firewalld
+#Must have ansible installed
+#must have ufw installed (This is a helpful tool to use the gui)
+
+
+
+  - name: FirewallD
+    hosts: localhost
+    become_user: root
+    connection: local
+    tasks:
+    
+    
+     - name: Installs firewalld
+       ansible.builtin.command:
+        cmd: sudo apt-get install firewalld
+        creates: Installs firewalld
+    
+     - name: Installs ufw
+       ansible.builtin.command:
+        cmd: sudo apt-get install ufw
+        creates: Installs ufw
+     
+     #This starts firewalld service
+     - name: Start firewalld
+       become_user: root
+       ansible.builtin.service:
+         name: firewalld
+         state: started
+         
+   #Makes sure that that firewalld is running 
+     - name: Ensure firewalld is running
+       become_user: root
+       service:
+        name: firewalld
+        state: started
+      
+       
+        #DENY ALL HERE!!
+        #As of right now this just denys everything incoming to this pc. 
+     - name: Incoming deny
+       become_user: root
+       ufw:
+        state: enabled
+        direction: incoming
+        policy: deny   
+        
+        
+        
+         
+       #This sets up all services needed 
+     - name: Enabling all services needed
+       become_user: root
+       firewalld: 
+        permanent: yes
+        immediate: yes
+        service: "{{ item }}"
+        state: enabled
+       with_items:
+       - http
+       - https
+       - dns
+       - dhcp
+       - ftp
+       - ssh
+       - smtp
+       
+          
+        # Sometimes it is desirable to let the sender know when traffic is
+    # being denied, rather than simply ignoring it. In these cases, use
+    # reject instead of deny. In addition, log rejected connections:
+     - name: UFW logging all deny
+       ufw:
+         rule: reject
+         port: auth
+         log: yes
+         #ufw supports connection rate limiting, which is useful for protecting
+# against brute-force login attacks. ufw will deny connections if an IP
+# address has attempted to initiate 6 or more connections in the last
+# 30 seconds
+     - name: limiting ssh 
+       ufw:
+         rule: limit
+         port: ssh
+         proto: tcp
+
+        
+ 
